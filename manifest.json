@@ -1,0 +1,39 @@
+{
+  "name": "AWS AI Agent Command Center",
+  "short_name": "AWS Agents",
+  "description": "Dual AI agents for AWS Security & Cost Optimization",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080c12",
+  "theme_color": "#080c12",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Security Scan",
+      "short_name": "Security",
+      "description": "Run a security audit",
+      "url": "/?mode=security"
+    },
+    {
+      "name": "Cost Audit",
+      "short_name": "Cost",
+      "description": "Run a cost optimization audit",
+      "url": "/?mode=cost"
+    }
+  ]
+}
