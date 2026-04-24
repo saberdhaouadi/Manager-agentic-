@@ -1,17 +1,5 @@
-{
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.20.0",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
-  },
-  "devDependencies": {
-    "vite": "^5.0.0",
-    "@vitejs/plugin-react": "^4.0.0"
-  },
-  "scripts": {
-    "build": "vite build",
-    "start": "vite preview --host 0.0.0.0 --port $PORT",
-    "dev": "vite"
-  },
-  "type": "module"
+"scripts": {
+  "build": "vite build",
+  "start": "vite preview --host 0.0.0.0 --port ${PORT:-4173}",
+  "dev": "vite"
 }
