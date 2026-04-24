@@ -57,33 +57,7 @@ const severityColor = (text) => {
   return "#8899aa";
 };
 
-function TypewriterText({ text, speed = 8 }) {
-  const [displayed, setDisplayed] = useState("");
-  const [done, setDone] = useState(false);
-  const idx = useRef(0);
-
-  useEffect(() => {
-    setDisplayed("");
-    setDone(false);
-    idx.current = 0;
-    if (!text) return;
-    const interval = setInterval(() => {
-      idx.current += 3;
-      if (idx.current >= text.length) {
-        setDisplayed(text);
-        setDone(true);
-        clearInterval(interval);
-      } else {
-        setDisplayed(text.slice(0, idx.current));
-      }
-    }, speed);
-    return () => clearInterval(interval);
-  }, [text]);
-
-  return <span>{displayed}{!done && <span className="cursor">▋</span>}</span>;
-}
-
-function FindingLine({ line, animate }) {
+function FindingLine({ line }) {
   const color = severityColor(line);
   const isBold = line.match(/^\[/);
   return (
@@ -112,7 +86,6 @@ function FindingLine({ line, animate }) {
 function AgentPanel({ title, icon, color, accentGradient, systemPrompt, agentKey, sharedInput, isRunning, setIsRunning, result, setResult }) {
   const [thinking, setThinking] = useState(false);
   const [error, setError] = useState("");
-  const abortRef = useRef(null);
 
   useEffect(() => {
     if (isRunning) {
@@ -126,20 +99,17 @@ function AgentPanel({ title, icon, color, accentGradient, systemPrompt, agentKey
     setResult("");
     setError("");
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("http://localhost:3001/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
           system: systemPrompt,
-          messages: [{ role: "user", content: sharedInput }],
+          message: sharedInput,
         }),
       });
       const data = await res.json();
-      if (data.error) throw new Error(data.error.message);
-      const text = data.content?.map(b => b.text || "").join("") || "";
-      setResult(text);
+      if (data.error) throw new Error(data.error);
+      setResult(data.text);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -162,7 +132,6 @@ function AgentPanel({ title, icon, color, accentGradient, systemPrompt, agentKey
       boxShadow: `0 0 40px ${color}15`,
       minWidth: 0,
     }}>
-      {/* Header */}
       <div style={{
         background: `linear-gradient(135deg, ${accentGradient})`,
         padding: "16px 20px",
@@ -190,7 +159,6 @@ function AgentPanel({ title, icon, color, accentGradient, systemPrompt, agentKey
         </div>
       </div>
 
-      {/* Output */}
       <div style={{
         flex: 1,
         padding: 16,
@@ -281,8 +249,6 @@ export default function App() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
         * { box-sizing: border-box; }
-        .cursor { animation: blink 0.7s infinite; }
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
         @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
@@ -293,7 +259,6 @@ export default function App() {
         ::-webkit-scrollbar-thumb { background: #2a3a50; border-radius: 4px; }
       `}</style>
 
-      {/* Header */}
       <div style={{ textAlign: "center", marginBottom: 28, animation: "fadeIn 0.6s ease" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
           <div style={{
@@ -315,7 +280,6 @@ export default function App() {
         </p>
       </div>
 
-      {/* Input */}
       <div style={{
         background: "#0d1117",
         border: "1px solid #1a2535",
@@ -328,17 +292,13 @@ export default function App() {
           ► DESCRIBE YOUR AWS ENVIRONMENT OR PASTE RESOURCE DATA
         </div>
 
-        {/* Presets */}
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
           {PRESETS.map(p => (
             <button key={p.label} onClick={() => setInput(p.value)} style={{
               padding: "4px 10px", borderRadius: 6, border: "1px solid #1e3050",
               background: "#0a1520", color: "#5588bb", fontSize: 11,
               fontFamily: "monospace", cursor: "pointer", transition: "all 0.15s",
-            }}
-            onMouseEnter={e => { e.target.style.borderColor = "#4a7ab0"; e.target.style.color = "#88bbdd"; }}
-            onMouseLeave={e => { e.target.style.borderColor = "#1e3050"; e.target.style.color = "#5588bb"; }}
-            >
+            }}>
               {p.label}
             </button>
           ))}
@@ -347,7 +307,7 @@ export default function App() {
         <textarea
           value={input}
           onChange={e => setInput(e.target.value)}
-          placeholder="e.g. We have 30 EC2 instances, several with public IPs and port 22 open to 0.0.0.0/0. S3 buckets with public access. No GuardDuty. Many instances running 24/7 at low utilization..."
+          placeholder="e.g. We have 30 EC2 instances, several with public IPs and port 22 open to 0.0.0.0/0..."
           rows={4}
           style={{
             width: "100%", background: "#060a0f", border: "1px solid #1a2535",
@@ -364,18 +324,13 @@ export default function App() {
             onClick={handleScan}
             disabled={!input.trim() || scanning}
             style={{
-              padding: "9px 24px",
-              borderRadius: 8,
-              border: "none",
-              background: scanning
-                ? "#1a2535"
-                : "linear-gradient(135deg, #1a4a9a, #6a1a9a)",
+              padding: "9px 24px", borderRadius: 8, border: "none",
+              background: scanning ? "#1a2535" : "linear-gradient(135deg, #1a4a9a, #6a1a9a)",
               color: scanning ? "#445566" : "#fff",
               fontSize: 13, fontWeight: 700,
               fontFamily: "'Space Grotesk', sans-serif",
               cursor: scanning || !input.trim() ? "not-allowed" : "pointer",
-              letterSpacing: "0.05em",
-              transition: "all 0.2s",
+              letterSpacing: "0.05em", transition: "all 0.2s",
               boxShadow: scanning ? "none" : "0 4px 20px #3a2a6a55",
             }}
           >
@@ -384,41 +339,23 @@ export default function App() {
         </div>
       </div>
 
-      {/* Agent Panels */}
-      <div style={{
-        display: "flex", gap: 14,
-        animation: "fadeIn 0.6s ease 0.2s both",
-        flexWrap: "wrap",
-      }}>
+      <div style={{ display: "flex", gap: 14, animation: "fadeIn 0.6s ease 0.2s both", flexWrap: "wrap" }}>
         <AgentPanel
-          title="Security Guardian"
-          icon="🛡"
-          color="#4a9eff"
+          title="Security Guardian" icon="🛡" color="#4a9eff"
           accentGradient="#0a2a5a 0%, #1a3a7a 100%"
-          systemPrompt={SYSTEM_SECURITY}
-          agentKey="security"
-          sharedInput={input}
-          isRunning={secRunning}
-          setIsRunning={setSecRunning}
-          result={secResult}
-          setResult={setSecResult}
+          systemPrompt={SYSTEM_SECURITY} agentKey="security"
+          sharedInput={input} isRunning={secRunning}
+          setIsRunning={setSecRunning} result={secResult} setResult={setSecResult}
         />
         <AgentPanel
-          title="Cost Optimizer"
-          icon="💰"
-          color="#ff6b35"
+          title="Cost Optimizer" icon="💰" color="#ff6b35"
           accentGradient="#3a1a0a 0%, #6a2a0a 100%"
-          systemPrompt={SYSTEM_COST}
-          agentKey="cost"
-          sharedInput={input}
-          isRunning={costRunning}
-          setIsRunning={setCostRunning}
-          result={costResult}
-          setResult={setCostResult}
+          systemPrompt={SYSTEM_COST} agentKey="cost"
+          sharedInput={input} isRunning={costRunning}
+          setIsRunning={setCostRunning} result={costResult} setResult={setCostResult}
         />
       </div>
 
-      {/* Legend */}
       <div style={{
         marginTop: 14, display: "flex", gap: 16, flexWrap: "wrap",
         padding: "10px 14px", background: "#0a0e14",
