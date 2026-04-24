@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './aws-ai-agents'
+import App from './aws-ai-agent'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
